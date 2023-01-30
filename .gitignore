@@ -1,4 +1,4 @@
 Databases/
-./__pycache__
 *.db
 *.pkl
+*.pyc
