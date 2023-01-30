@@ -14,7 +14,8 @@ class SQL():
             os.makedirs("Databases")
 
         if not os.path.exists("Databases/" + self.database + ".db"):
-            self.create(data = pd.DataFrame())
+            pass
+            #self.create(data = pd.DataFrame())
 
     def create(self, data = None):
 
@@ -38,9 +39,13 @@ class SQL():
         return row_dict
         
     def getColumnsValues(self, description, values):
-        names = list(map(lambda x: x[0], description))
+        names = self.getColumnNames(description)
         dictionary = dict(map(lambda name, value: (name, value), names, values[0]))
         return dictionary
+
+    def getColumnNames(self, description):
+        names = list(map(lambda x: x[0], description))
+        return names
 
     def getDescription(self):
         connection = sqlite3.connect('Databases/' + self.database + '.db')
@@ -64,3 +69,10 @@ class SQL():
         connection.execute(query)
         connection.commit()
         connection.close()
+
+    def getTable(self):
+        connection = sqlite3.connect('Databases/' + self.database + '.db')
+        sql_query = pd.read_sql_query ('''SELECT * FROM {}'''.format(self.table), connection)
+        column_names = self.getColumnNames(self.getDescription())
+        df = pd.DataFrame(sql_query, columns = column_names)
+        return df
