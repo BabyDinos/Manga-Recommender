@@ -1,12 +1,17 @@
 from SQL import SQL
 from Ray import Supervisor
-import modin.pandas as pd
+import pandas as pd
 import numpy as np
 from GetData import Data
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 
 data = Data()
-matrix = data.getSimilarityMatrix(16)
+df = data.getRevisedMangaDataframe()
+matrix = data.getSimilarityMatrix(32)
+matrix.index = matrix['title']
+matrix.to_parquet('Databases/SimilarityMatrix32.parquet.gzip', compression = 'GZIP')
 
 
 def getNLargest(n, input_manga):

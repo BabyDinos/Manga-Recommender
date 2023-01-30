@@ -1,6 +1,6 @@
 from Ray import Supervisor
 import ray
-import pandas as pd
+import modin.pandas as pd
 import numpy as np
 from SQL import SQL
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
@@ -25,7 +25,8 @@ class Data:
             sql = SQL('Mangas')
             df = sql.getTable()
         df['genres'].replace('', np.nan, inplace=True)
-        self.df = df[df['genres'].notna()]
+        df = df[df['genres'].notna()]
+        self.df = df
         return self.df
 
     def getchunks(self, iterable, chunk_size):
@@ -46,36 +47,34 @@ class Data:
         if size != None:
             try:
                 self.similarities_matrix = pd.read_pickle("Databases/SimilarityMatrix{}.pkl".format(size))  
-                return self.similarities_matrix
             except:
-                return
-        vocabulary_set = set()
-        for row in self.df['genres']:
-            genre_list = row.split(' ')
-            for genre in genre_list:
-                vocabulary_set.add(genre.lower())
-        vocabulary_set = list(vocabulary_set)
-        model = CountVectorizer(analyzer='word', stop_words=stop_words, vocabulary = vocabulary_set, dtype = np.float32, lowercase = True
-        )
+                vocabulary_set = set()
+                for row in self.df['genres']:
+                    genre_list = row.split(' ')
+                    for genre in genre_list:
+                        vocabulary_set.add(genre.lower())
+                vocabulary_set = list(vocabulary_set)
+                model = CountVectorizer(analyzer='word', stop_words=stop_words, vocabulary = vocabulary_set, dtype = getattr(np, 'float{}'.format(size)), lowercase = True
+                )
 
-        dtm_chunked = []
-        for chunk in self.getchunks(self.df['genres'], 5000):
-            dtm_chunked.append(model.fit_transform(chunk))
+                dtm_chunked = []
+                for chunk in self.getchunks(self.df['genres'], 5000):
+                    dtm_chunked.append(model.fit_transform(chunk))
 
-        # matrices concates
-        dtm = sparse.vstack(dtm_chunked)
+                # matrices concates
+                dtm = sparse.vstack(dtm_chunked)
 
-        similarities = cosine_similarity(dtm, dense_output = True)
-        self.similarities_matrix = pd.DataFrame(similarities, columns = self.df['title'], index = self.df['title']).reset_index()
-
-        return self.similarities_matrix
+                similarities = cosine_similarity(dtm, dense_output = True)
+                self.similarities_matrix = pd.DataFrame(similarities, columns = self.df['title'], index = self.df['title']).reset_index()
+            self.similarities_matrix.index = self.similarities_matrix['title']
+            return self.similarities_matrix
 
     def saveMatrix(self, matrix, size):
         matrix.to_pickle("Databases/SimilarityMatrix{}.pkl".format(size))
 
-    def compressMatrix(self, matrix):
-        convert_dict = {name:np.float16 for name in matrix.index if name != 'title'}
+    def compressMatrix(self, matrix, size):
+        var_type = getattr(np, 'float{}'.format(size))
+        convert_dict = {name:var_type for name in matrix.index if name != 'title'}
         matrix = matrix.astype(convert_dict)
-        self.similarities_matrix.to_pickle("Databases/SimilarityMatrix16.pkl")
         return matrix
 
