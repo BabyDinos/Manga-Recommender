@@ -20,12 +20,15 @@ class Data:
         self.df = pd.DataFrame(manga_stats).T
         return self.df
 
-    def getRevisedMangaDataframe(self, df = None):
+    def getRevisedMangaDataframe(self, compare, df = None):
+        self.compare = compare
         if df == None:
             sql = SQL('Mangas')
             df = sql.getTable()
-        df['genres'].replace('', np.nan, inplace=True)
-        df = df[df['genres'].notna()]
+        df[compare].replace('', np.nan, inplace=True)
+        df = df[df[compare].notna()]
+        df.index = df['title']
+        df['score'] = df['score'].astype(np.float32)
         self.df = df
         return self.df
 
@@ -43,22 +46,23 @@ class Data:
             else:
                 yield iterable.iloc[j:]
 
-    def getSimilarityMatrix(self, size = None):
+    def getSimilarityMatrix(self, compare, size = None):
         if size != None:
             try:
-                self.similarities_matrix = pd.read_pickle("Databases/SimilarityMatrix{}.pkl".format(size))  
+                self.similarities_matrix = self.readParquet(compare, size) 
             except:
                 vocabulary_set = set()
-                for row in self.df['genres']:
-                    genre_list = row.split(' ')
-                    for genre in genre_list:
-                        vocabulary_set.add(genre.lower())
+                for row in self.df[compare]:
+                    compare_list = row.split(' ')
+                    for comp in compare_list:
+                        vocabulary_set.add(comp.lower())
                 vocabulary_set = list(vocabulary_set)
-                model = CountVectorizer(analyzer='word', stop_words=stop_words, vocabulary = vocabulary_set, dtype = getattr(np, 'float{}'.format(size)), lowercase = True
+                model = CountVectorizer(analyzer='word', stop_words=stop_words, vocabulary = vocabulary_set, 
+                dtype = getattr(np, 'float{}'.format(size)), lowercase = True
                 )
 
                 dtm_chunked = []
-                for chunk in self.getchunks(self.df['genres'], 5000):
+                for chunk in self.getchunks(self.df[compare], 5000):
                     dtm_chunked.append(model.fit_transform(chunk))
 
                 # matrices concates
@@ -66,15 +70,31 @@ class Data:
 
                 similarities = cosine_similarity(dtm, dense_output = True)
                 self.similarities_matrix = pd.DataFrame(similarities, columns = self.df['title'], index = self.df['title']).reset_index()
-            self.similarities_matrix.index = self.similarities_matrix['title']
-            return self.similarities_matrix
+        self.similarities_matrix.index = self.df['title']
+        return self.similarities_matrix
 
-    def saveMatrix(self, matrix, size):
-        matrix.to_pickle("Databases/SimilarityMatrix{}.pkl".format(size))
+    def readParquet(self, compare, size):
+        list_of_dataframes = []
+        columns = list(self.df['title'])
+        path = 'Databases/SimilarityMatrix_{}_{}.parquet.gzip'.format(compare, size)
 
-    def compressMatrix(self, matrix, size):
-        var_type = getattr(np, 'float{}'.format(size))
-        convert_dict = {name:var_type for name in matrix.index if name != 'title'}
-        matrix = matrix.astype(convert_dict)
-        return matrix
+        def divide_chunks(list, chunks):
+            for i in range(0, len(list), chunks):
+                print(i)
+                yield list[i:i+chunks]
 
+        for chunk in divide_chunks(columns, 10000):
+            new_matrix = pd.read_parquet(path, columns = chunk)
+            new_matrix = new_matrix.astype(np.float16)
+            list_of_dataframes.append(new_matrix)
+
+        big_matrix = pd.concat(list_of_dataframes, axis = 1)
+
+        return big_matrix
+
+    def saveMatrix(self, matrix, compare, size):
+        path = 'Databases/SimilarityMatrix_{}_{}.parquet.gzip'.format(compare, size)
+        try:
+            matrix.to_parquet(path, compression = 'GZIP')
+        except:
+            print("Matrix Not Saved")
