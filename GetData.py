@@ -1,6 +1,6 @@
 from Ray import Supervisor
 import ray
-import modin.pandas as pd
+import pandas as pd
 import numpy as np
 from SQL import SQL
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer

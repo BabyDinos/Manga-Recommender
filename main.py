@@ -9,9 +9,22 @@ import pyarrow.parquet as pq
 
 data = Data()
 df = data.getRevisedMangaDataframe()
-matrix = data.getSimilarityMatrix(32)
-matrix.index = matrix['title']
-matrix.to_parquet('Databases/SimilarityMatrix32.parquet.gzip', compression = 'GZIP')
+columns = list(df['title'])
+
+# matrix = data.getSimilarityMatrix(32)
+# matrix.to_parquet('Databases/SimilarityMatrix32.parquet.gzip', compression = 'GZIP')
+
+big_matrix = pd.DataFrame()
+
+def divide_chunks(list, chunks):
+    for i in range(0, len(list), chunks):
+        print(i)
+        yield list[i:i+chunks]
+
+for chunk in divide_chunks(columns, 10000):
+    new_matrix = pd.read_parquet('Databases/SimilarityMatrix32.parquet.gzip', columns = chunk)
+    new_matrix = new_matrix.astype(np.float16)
+    big_matrix = pd.concat([big_matrix, new_matrix], axis = 1)
 
 
 def getNLargest(n, input_manga):
