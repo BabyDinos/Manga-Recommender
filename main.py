@@ -12,25 +12,25 @@ import pyarrow.parquet as pq
 data = Data()
 df = data.getRevisedMangaDataframe('themes')
 theme_matrix = data.getSimilarityMatrix('themes', 32)
-df = data.getRevisedMangaDataframe('genres')
-genre_matrix = data.getSimilarityMatrix('genres',32)
 
 def getNLargest(similarity_matrix, n, input_manga):
     sorted_column = similarity_matrix[input_manga].sort_values(ascending = False)
     sorted_column = sorted_column[sorted_column.index != input_manga]
     return sorted_column[0:n]
 
-def sortMangas(recommendation_titles, sort_by, ascending):
+def sortMangas(recommendation_titles, score = 0, rank = 9999999999999, popularity = 9999999999999):
 
     rows = list(recommendation_titles.index)
 
-    recommendation = df[df.index.isin(rows)].sort_values(by = sort_by, ascending = ascending)
+    recommendation = df.loc[rows]
+
+    recommendation = recommendation.loc[(df['score'] >= score) & (df['rank'] <= rank) & (df['popularity'] <= popularity)]
 
     return recommendation['synopsis']
 
-recommendation_titles = getNLargest(genre_matrix, 1000, 'Black Clover')
-mangas = sortMangas(recommendation_titles, ['score'], [False])
+
+recommendation_titles = getNLargest(theme_matrix, 1000, 'Overlord')
+
+mangas = sortMangas(recommendation_titles, 7, 10000)
 
 print('|*| '+ mangas.index[0] + ' |*|\n' + mangas[0])
-
-mangas
