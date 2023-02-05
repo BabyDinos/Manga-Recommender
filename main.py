@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from GetData import GData
 from ManipulateData import MData
+from User import User
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -13,11 +14,17 @@ import pyarrow.parquet as pq
 gdata = GData()
 
 df = gdata.getRevisedMangaDataframe('themes')
-theme_matrix = gdata.getSimilarityMatrix('themes', 32, ['Overlord'])
 
+mdata = MData(gdata)
 
-mdata = MData(df, theme_matrix)
+mdata.updateRecommendationRanks(['Overlord','Berserk'])
 
-mdata.updateRecommendationRanks('Overlord', add = True)
+user = User('BabyDino', mdata)
 
-mdata.getRecommendation()
+user.updateList(['Overlord', 'Tensei shitara Slime Datta Ken'])
+
+user.getCompleteList()
+
+user.getRecommendation()
+
+user.mdata.recommendation_dict

@@ -2,13 +2,16 @@ import pandas as pd
 
 class MData:
 
-    def __init__(self, manga_info, similarity_matrix):
-        self.mi = manga_info
+    def __init__(self, gdata):
+        self.gdata = gdata
+        self.mi = gdata.df
         self.recommendation_dict = {}
         self.manga_record_dict = {}
-        self.similarity_matrix = similarity_matrix
+        self.similarity_matrix = pd.DataFrame()
         self.recommendation = pd.DataFrame()
         self.sorted_recommendation_df = pd.DataFrame()
+
+    # Helper Functions
 
     def getNSimilarMangas(self, input_manga, n = 50):
         sorted_column = self.similarity_matrix[input_manga].sort_values(ascending = False)
@@ -50,20 +53,25 @@ class MData:
             self.manga_record_dict[manga_name] = m_dict
             return m_dict
 
-    def updateRecommendationRanks(self, manga, add = True):
-        if manga in self.manga_record_dict:
-            m_dict = self.manga_record_dict[manga]
-        else:
-            recommendation = self.getNSimilarMangas(manga)
-            sorted_recommendation_df = self.sortMangas(recommendation)
-            m_dict = self.recordMangaRanks(recommendation, sorted_recommendation_df)
+    # Main Functions
 
-        if add:
-            for m, score in m_dict.items():
-                self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) + score
-        else:
-            for m, score in m_dict.items():
-                self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) - score
+    def updateRecommendationRanks(self, manga_list, add = True):
+        FLOAT_SIZE = 32
+        self.similarity_matrix = self.gdata.getSimilarityMatrix(self.gdata.compare, FLOAT_SIZE, manga_list)
+        for manga in manga_list:
+            if manga in self.manga_record_dict:
+                m_dict = self.manga_record_dict[manga]
+            else:
+                recommendation = self.getNSimilarMangas(manga)
+                sorted_recommendation_df = self.sortMangas(recommendation)
+                m_dict = self.recordMangaRanks(recommendation, sorted_recommendation_df)
+
+            if add:
+                for m, score in m_dict.items():
+                    self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) + score
+            else:
+                for m, score in m_dict.items():
+                    self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) - score
 
     def getRecommendation(self):
         self.recommendation_dict = {key:value for (key, value) in sorted(self.recommendation_dict.items(), key = lambda x: x[1], reverse = True)}
