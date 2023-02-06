@@ -18,13 +18,26 @@ class App:
             ]
         ]
 
-        # ----- Full layout -----
-        self.layout = [
+        left_part = [
+            [sg.Text(text = 'Favorited List', size = (30, 1))],
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-LIKELIST-')],
+            [sg.Text(text = 'Dislike List', size = (30, 1))],
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-DISLIKELIST-')]
+        ]
+
+        right_part = [
             [sg.Text(size=(60,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
             [sg.Image(size = (300,300), key = '-IMAGE-')],
             [sg.Input(size = (60, 1), key='-SEARCH-', enable_events= True)],
             [sg.Listbox([], size=(60, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
-            self.rating_buttons
+        ]
+
+        # ----- Full layout -----
+        self.layout = [
+            [sg.Column(left_part, vertical_alignment = 'top'),
+            sg.VerticalSeparator(),
+            sg.Column(right_part),
+            sg.HorizontalSeparator()]
         ]
 
     def getManga(self, name = None):
