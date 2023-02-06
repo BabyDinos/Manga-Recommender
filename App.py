@@ -4,15 +4,25 @@ from GetData import GData
 gdata = GData()
 gdata.getRevisedMangaDataframe('themes')
 
+rating_buttons = [
+    [
+        sg.Btn(size=(10, 5), enable_events=True, key="-DISLIKE-", button_color = 'white on red', button_text= 'Dislike'),
+        sg.Btn(size=(10, 5), enable_events=True, key="-MANGA-", button_color = 'white on black', button_text = 'Get Manga'),
+        sg.Btn(size=(10, 5), enable_events=True, key="-LIKE-", button_color = 'white on green', button_text = 'Like')
+    ]
+]
+
 # ----- Full layout -----
 layout = [
-    [sg.Text("Manga")],
-    [sg.Btn(size=(10, 5), enable_events=True, key="-MANGA-")],
-    [sg.Text(size=(40,1), key='-OUTPUT-', justification = 'center')],
-    [sg.Image(size = (300,300), key = '-IMAGE-')]
+    [sg.Text(size=(40,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
+    [sg.Image(size = (300,300), key = '-IMAGE-')],
+    rating_buttons
 ]
 
 window = sg.Window("Image Viewer", layout, element_justification='c')
+
+like_list = []
+dislike_list = []
 
 # Run the Event Loop
 while True:
@@ -26,5 +36,9 @@ while True:
         window['-OUTPUT-'].update(title)
         image = gdata.getImage(manga)
         window['-IMAGE-'].update(image)
+    if event == '-LIKE-':
+        like_list.append(manga.title)
+    if event == '-DISLIKE-':
+        dislike_list.append(manga.title)
 window.close()
 
