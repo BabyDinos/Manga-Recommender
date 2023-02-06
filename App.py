@@ -6,8 +6,10 @@ class App:
 
     def __init__(self, user):
         self.gdata = user.mdata.gdata
+        self.manga_info = self.gdata.df
     
     def setup(self):
+
         self.rating_buttons = [
             [
                 sg.Btn(size=(10, 5), enable_events=True, key="-DISLIKE-", button_color = 'white on red', button_text= 'Dislike'),
@@ -20,11 +22,16 @@ class App:
         self.layout = [
             [sg.Text(size=(60,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
             [sg.Image(size = (300,300), key = '-IMAGE-')],
+            [sg.Input(size = (60, 1), key='-SEARCH-', enable_events= True)],
+            [sg.Listbox([], size=(60, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
             self.rating_buttons
         ]
 
-    def getManga(self):
-        mal_id = self.gdata.getRandomMalID()
+    def getManga(self, name = None):
+        if name:
+            mal_id = self.manga_info.loc[name, 'mal_id']
+        else:
+            mal_id = self.gdata.getRandomMalID()
         manga = self.gdata.getManga(mal_id)
         title = manga.title
         image = self.gdata.getImage(manga)
@@ -33,6 +40,7 @@ class App:
 
     def start(self):
 
+        names = list(self.manga_info.index)
         window = sg.Window("Image Viewer", self.layout, element_justification='c')
 
         def updateManga(manga):
@@ -57,6 +65,15 @@ class App:
             if event == '-DISLIKE-':
                 dislike_list.append(manga['title'])
                 manga = self.getManga()
+                updateManga(manga)
+            if values['-SEARCH-'] != '':
+                search = values['-SEARCH-']
+                new_values = [x for x in names if search in x]
+                window['-LIST-'].update(new_values)
+            else:
+                window['-LIST-'].update([])
+            if event == '-LIST-' and len(values['-LIST-']):
+                manga = self.getManga(values['-LIST-'][0])
                 updateManga(manga)
         window.close()
 
