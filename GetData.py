@@ -7,10 +7,17 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from Wordlist import stop_words, view_list
 from scipy import sparse
+import random
+from mal import Manga
+from urllib import request
+from PIL import Image
+import io
+import cloudscraper
 
 class GData:
 
     def __init__(self):
+        self.df = pd.DataFrame()
         pass
 
     def downloadMangaDataframe(self):
@@ -117,3 +124,26 @@ class GData:
             matrix.to_parquet(path, compression = 'GZIP')
         except:
             print("Matrix Not Saved")
+
+    def getRandomMalID(self):
+        random_manga = random.randrange(0, self.df.shape[0])
+        return self.df['mal_id'][random_manga]
+
+    def getManga(self, mal_id):
+        return Manga(mal_id)
+
+    def getImage(self, manga):
+        url = manga.image_url
+        jpg_data = (
+            cloudscraper.create_scraper(
+                browser={"browser": "chrome", "platform": "windows", "mobile": False}
+            )
+            .get(url)
+            .content
+        )
+
+        pil_image = Image.open(io.BytesIO(jpg_data))
+        png_bio = io.BytesIO()
+        pil_image.save(png_bio, format="PNG")
+        png_data = png_bio.getvalue()
+        return png_data
