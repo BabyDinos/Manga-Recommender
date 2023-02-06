@@ -7,6 +7,7 @@ from ManipulateData import MData
 from User import User
 import pyarrow as pa
 import pyarrow.parquet as pq
+from App import App
 
 # GUI | Character synopsis and relation
 
@@ -17,15 +18,11 @@ df = gdata.getRevisedMangaDataframe('themes')
 
 mdata = MData(gdata)
 
-mdata.updateRecommendationRanks(['Overlord','Berserk'])
-
 user = User('BabyDino', mdata)
 
-user.updateList(['Overlord', 'Tensei shitara Slime Datta Ken'])
+app = App(user)
 
-user.getCompleteList()
+app.setup()
 
-user.getRecommendation()
-
-user.mdata.recommendation_dict
+app.start()
 
