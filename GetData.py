@@ -9,10 +9,9 @@ from Wordlist import stop_words, view_list
 from scipy import sparse
 import random
 from mal import Manga
-from urllib import request
+import requests
 from PIL import Image
 import io
-import cloudscraper
 
 class GData:
 
@@ -134,13 +133,7 @@ class GData:
 
     def getImage(self, manga):
         url = manga.image_url
-        jpg_data = (
-            cloudscraper.create_scraper(
-                browser={"browser": "chrome", "platform": "windows", "mobile": False}
-            )
-            .get(url)
-            .content
-        )
+        jpg_data = requests.get(url).content
 
         pil_image = Image.open(io.BytesIO(jpg_data))
         png_bio = io.BytesIO()

@@ -10,7 +10,7 @@ class App:
     
     def setup(self):
 
-        self.rating_buttons = [
+        rating_buttons = [
             [
                 sg.Btn(size=(10, 5), enable_events=True, key="-DISLIKE-", button_color = 'white on red', button_text= 'Dislike'),
                 sg.Btn(size=(10, 5), enable_events=True, key="-MANGA-", button_color = 'white on black', button_text = 'New Manga'),
@@ -26,18 +26,22 @@ class App:
         ]
 
         right_part = [
-            [sg.Text(size=(60,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
+            [sg.Text(size=(40,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
             [sg.Image(size = (300,300), key = '-IMAGE-')],
-            [sg.Input(size = (60, 1), key='-SEARCH-', enable_events= True)],
-            [sg.Listbox([], size=(60, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
+            [sg.Input(size = (40, 1), key='-SEARCH-', enable_events= True)],
+            [sg.Listbox([], size=(40, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
         ]
 
         # ----- Full layout -----
         self.layout = [
             [sg.Column(left_part, vertical_alignment = 'top'),
             sg.VerticalSeparator(),
-            sg.Column(right_part),
-            sg.HorizontalSeparator()]
+            sg.Column(right_part, element_justification= 'center')],
+            [
+            [sg.HorizontalSeparator()],
+            [rating_buttons]
+            ]
+
         ]
 
     def getManga(self, name = None):
@@ -60,33 +64,43 @@ class App:
             window['-OUTPUT-'].update(manga['title'])
             window['-IMAGE-'].update(manga['image'])
 
-        like_list = []
-        dislike_list = []
+        ld_dictionary = {}
 
         # Run the Event Loop
         while True:
             event, values = window.read()
             if event == "Exit" or event == sg.WIN_CLOSED:
                 break
+            # Buttons
             if event == '-MANGA-':
                 manga = self.getManga()
                 updateManga(manga)
             if event == '-LIKE-':
-                like_list.append(manga['title'])
+                ld_dictionary[manga['title']] = 1
+                window['-LIKELIST-'].update([name for name, value in ld_dictionary.items() if value == 1])
                 manga = self.getManga()
                 updateManga(manga)
             if event == '-DISLIKE-':
-                dislike_list.append(manga['title'])
+                ld_dictionary[manga['title']] = -1
+                window['-DISLIKELIST-'].update([name for name, value in ld_dictionary.items() if value == -1])
                 manga = self.getManga()
                 updateManga(manga)
+            # Search
             if values['-SEARCH-'] != '':
                 search = values['-SEARCH-']
                 new_values = [x for x in names if search in x]
                 window['-LIST-'].update(new_values)
             else:
                 window['-LIST-'].update([])
+            # Listbox
             if event == '-LIST-' and len(values['-LIST-']):
                 manga = self.getManga(values['-LIST-'][0])
+                updateManga(manga)
+            if event == '-LIKELIST-' and len(values['-LIKELIST-']):
+                manga = self.getManga(values['-LIKELIST-'][0])
+                updateManga(manga)
+            if event == '-DISLIKELIST-' and len(values['-DISLIKELIST-']):
+                manga = self.getManga(values['-DISLIKELIST-'][0])
                 updateManga(manga)
         window.close()
 
