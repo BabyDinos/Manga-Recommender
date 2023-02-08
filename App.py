@@ -5,6 +5,7 @@ from GetData import GData
 class App:
 
     def __init__(self, user):
+        self.user = user
         self.gdata = user.mdata.gdata
         self.manga_info = self.gdata.df
     
@@ -18,30 +19,38 @@ class App:
             ]
         ]
 
-        left_part = [
+        ld_list = [
             [sg.Text(text = 'Favorited List', size = (30, 1))],
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-LIKELIST-')],
             [sg.Text(text = 'Dislike List', size = (30, 1))],
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-DISLIKELIST-')]
         ]
 
-        right_part = [
+        manga_show = [
             [sg.Text(size=(40,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
             [sg.Image(size = (300,300), key = '-IMAGE-')],
             [sg.Input(size = (40, 1), key='-SEARCH-', enable_events= True)],
             [sg.Listbox([], size=(40, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
         ]
 
+        recommendation = [
+            [sg.Text(size = (30,1), key = '-REOMMENDATION-', font = ("Arial", 20))],
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')]
+        ]
+
+
         # ----- Full layout -----
         self.layout = [
-            [sg.Column(left_part, vertical_alignment = 'top'),
+            [sg.Column(ld_list, vertical_alignment = 'top'),
             sg.VerticalSeparator(),
-            sg.Column(right_part, element_justification= 'center')],
+            sg.Column(manga_show, justification = 'center', element_justification= 'center'),
+            sg.VerticalSeparator(),
+            sg.Column(recommendation, element_justification = 'center')
+            ],
             [
             [sg.HorizontalSeparator()],
-            [rating_buttons]
+            [sg.Column(rating_buttons, element_justification= 'center')]
             ]
-
         ]
 
     def getManga(self, name = None):
