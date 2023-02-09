@@ -34,7 +34,7 @@ class App:
         ]
 
         recommendation = [
-            [sg.Text(size = (30,1), key = '-REOMMENDATION-', font = ("Arial", 20))],
+            [sg.Text(size = (30,1), text = 'Recommendation List', key = '-REOMMENDATION-')],
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')]
         ]
 
@@ -45,7 +45,7 @@ class App:
             sg.VerticalSeparator(),
             sg.Column(manga_show, justification = 'center', element_justification= 'center'),
             sg.VerticalSeparator(),
-            sg.Column(recommendation, element_justification = 'center')
+            sg.Column(recommendation, vertical_alignment = 'top')
             ],
             [
             [sg.HorizontalSeparator()],
