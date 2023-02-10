@@ -105,7 +105,6 @@ class GData:
 
         def divide_chunks(list, chunks):
             for i in range(0, len(list), chunks):
-                print(i)
                 yield list[i:i+chunks]
 
         for chunk in divide_chunks(columns, 10000):

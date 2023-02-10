@@ -14,14 +14,17 @@ class App:
         rating_buttons = [
             [
                 sg.Btn(size=(10, 5), enable_events=True, key="-DISLIKE-", button_color = 'white on red', button_text= 'Dislike'),
+                sg.Btn(size=(10, 5), enable_events=True, key="-NEUTRAL-", button_color = 'white on gray', button_text = 'Neutral'),
                 sg.Btn(size=(10, 5), enable_events=True, key="-MANGA-", button_color = 'white on black', button_text = 'New Manga'),
-                sg.Btn(size=(10, 5), enable_events=True, key="-LIKE-", button_color = 'white on green', button_text = 'Like')
+                sg.Btn(size=(10, 5), enable_events=True, key="-LIKE-", button_color = 'white on blue', button_text = 'Like')
             ]
         ]
 
         ld_list = [
             [sg.Text(text = 'Favorited List', size = (30, 1))],
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-LIKELIST-')],
+            [sg.Text(text = 'Neutral List', size = (30, 1))],
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-NEUTRALLIST-')],
             [sg.Text(text = 'Dislike List', size = (30, 1))],
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-DISLIKELIST-')]
         ]
@@ -35,7 +38,8 @@ class App:
 
         recommendation = [
             [sg.Text(size = (30,1), text = 'Recommendation List', key = '-REOMMENDATION-')],
-            [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')]
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')],
+            [sg.Btn(size=(10, 5), enable_events=True, key="-GETRECOMMENDATION-", button_color = 'white on black', button_text= 'Get Recommendation')]
         ]
 
         # ----- Full layout -----
@@ -72,7 +76,7 @@ class App:
             window['-OUTPUT-'].update(manga['title'])
             window['-IMAGE-'].update(manga['image'])
 
-        ld_dictionary = {}
+        self.ld_dictionary = {}
         thread = Thread(target = self.getManga)
         thread.start()
 
@@ -86,19 +90,33 @@ class App:
                 thread = Thread(target = self.getManga)
                 thread.start()
             if event == '-LIKE-':
-                ld_dictionary[self.manga['title']] = 1
-                window['-LIKELIST-'].update([name for name, value in ld_dictionary.items() if value == 1])
-                thread = Thread(target = self.getManga)
-                thread.start()
+                if self.ld_dictionary.get(self.manga['title']) == -1:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']]*2, True, True))
+                    thread.start()
+                elif self.ld_dictionary.get(self.manga['title'], 0) == 0:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']], True, True))
+                    thread.start()
+                self.ld_dictionary[self.manga['title']] = 1
+            if event == '-NEUTRAL-':
+                if self.ld_dictionary.get(self.manga['title']) == 1:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']], True, False))
+                    thread.start()
+                elif self.ld_dictionary.get(self.manga['title']) == -1:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']], False, False))
+                    thread.start()
+                self.ld_dictionary[self.manga['title']] = 0
             if event == '-DISLIKE-':
-                ld_dictionary[self.manga['title']] = -1
-                window['-DISLIKELIST-'].update([name for name, value in ld_dictionary.items() if value == -1])
-                thread = Thread(target = self.getManga)
-                thread.start()
+                if self.ld_dictionary.get(self.manga['title']) == 1:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']]*2, False, True))
+                    thread.start()
+                elif self.ld_dictionary.get(self.manga['title'], 0) == 0:
+                    thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']], False, True))
+                    thread.start()
+                self.ld_dictionary[self.manga['title']] = -1
             # Search
             if values['-SEARCH-'] != '':
-                search = values['-SEARCH-']
-                new_values = [x for x in names if search in x]
+                search = values['-SEARCH-'].lower()
+                new_values = [x for x in names if search in x.lower()]
                 window['-LIST-'].update(new_values)
             else:
                 window['-LIST-'].update([])
@@ -112,8 +130,18 @@ class App:
             if event == '-DISLIKELIST-' and len(values['-DISLIKELIST-']):
                 thread = Thread(target = self.getManga, args=(values['-DISLIKELIST-'][0],))
                 thread.start()
+            if event == '-NEUTRALLIST-' and len(values['-NEUTRALLIST-']):
+                thread = Thread(target = self.getManga, args=(values['-NEUTRALLIST-'][0],))
+                thread.start()
+            if event == '-GETRECOMMENDATION-':
+                window['-RECOMMENDATIONLIST-'].update(recommendation)
             if not thread.is_alive():
                 updateManga(self.manga)
+                recommendation = list(self.user.getRecommendation().index)
+                window['-LIKELIST-'].update([name for name, value in self.ld_dictionary.items() if value == 1])
+                window['-DISLIKELIST-'].update([name for name, value in self.ld_dictionary.items() if value == -1])
+                window['-NEUTRALLIST-'].update([name for name, value in self.ld_dictionary.items() if value == 0])
+                self.user.updateList(self.ld_dictionary)
         window.close()
 
 

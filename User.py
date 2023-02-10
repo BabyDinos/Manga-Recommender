@@ -4,25 +4,21 @@ class User:
     def __init__(self, username, mdata):
         self.mdata = mdata
         self.username = username
-        self.like_list = set()
-        self.dislike_list = set()
+        self.like_list = []
+        self.neutral_list = []
+        self.dislike_list = []
         self.complete_list = []
     
-    def updateList(self, manga_list, like = True, add = True):
-        if like:
-            if add:
-                self.like_list.update(manga_list)
-            else:
-                self.like_list.difference(manga_list)
-        else:
-            if add:
-                self.dislike_list.update(manga_list)
-            else:
-                self.dislike_list.difference(manga_list)
-        self.mdata.updateRecommendationRanks(manga_list, add)
+    def updateRecommendationRanks(self, manga_list, like = True, add = True):
+        self.mdata.updateRecommendationRanks(manga_list, like, add)
+
+    def updateList(self, ld_dictionary):
+        self.like_list = [manga for (manga, value) in ld_dictionary.items() if value == 1]
+        self.neutral_list = [manga for (manga, value) in ld_dictionary.items() if value == 0]
+        self.dislike_list = [manga for (manga, value) in ld_dictionary.items() if value == -1]
 
     def getCompleteList(self):
-        self.complete_list = list(self.like_list | self.dislike_list)
+        self.complete_list = self.like_list + self.neutral_list + self.dislike_list
         return self.complete_list
 
     def getRecommendation(self):

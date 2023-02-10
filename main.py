@@ -26,5 +26,4 @@ app.setup()
 
 app.start()
 
-
-    
+app.user.mdata.recommendation_dict

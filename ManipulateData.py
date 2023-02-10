@@ -55,9 +55,9 @@ class MData:
 
     # Main Functions
 
-    def updateRecommendationRanks(self, manga_list, add = True):
+    def updateRecommendationRanks(self, manga_list, like = True, add = True):
         FLOAT_SIZE = 32
-        self.similarity_matrix = self.gdata.getSimilarityMatrix(self.gdata.compare, FLOAT_SIZE, manga_list)
+        self.similarity_matrix = self.gdata.getSimilarityMatrix(self.gdata.compare, FLOAT_SIZE, list(set(manga_list)))
         for manga in manga_list:
             if manga in self.manga_record_dict:
                 m_dict = self.manga_record_dict[manga]
@@ -66,7 +66,7 @@ class MData:
                 sorted_recommendation_df = self.sortMangas(recommendation)
                 m_dict = self.recordMangaRanks(recommendation, sorted_recommendation_df)
 
-            if add:
+            if (like and add) or (not like and not add):
                 for m, score in m_dict.items():
                     self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) + score
             else:
@@ -74,6 +74,6 @@ class MData:
                     self.recommendation_dict[m] = self.recommendation_dict.get(m, 0) - score
 
     def getRecommendation(self):
-        self.recommendation_dict = {key:value for (key, value) in sorted(self.recommendation_dict.items(), key = lambda x: x[1], reverse = True)}
-        rec = self.mi.loc[(self.recommendation_dict.keys())]
+        recommendation_dict = {key:value for (key, value) in sorted(self.recommendation_dict.items(), key = lambda x: x[1], reverse = True) if value > 0}
+        rec = self.mi.loc[(recommendation_dict.keys())]
         return rec
