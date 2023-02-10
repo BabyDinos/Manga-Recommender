@@ -1,6 +1,6 @@
 import PySimpleGUI as sg 
 from GetData import GData
-
+from threading import Thread
 
 class App:
 
@@ -38,7 +38,6 @@ class App:
             [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')]
         ]
 
-
         # ----- Full layout -----
         self.layout = [
             [sg.Column(ld_list, vertical_alignment = 'top'),
@@ -58,11 +57,11 @@ class App:
             mal_id = self.manga_info.loc[name, 'mal_id']
         else:
             mal_id = self.gdata.getRandomMalID()
-        manga = self.gdata.getManga(mal_id)
+        manga = self.gdata.getManga(mal_id) 
         title = manga.title
         image = self.gdata.getImage(manga)
-        return {'title': title, 'image':image}
-
+        self.manga = {'title': title, 'image':image}
+        return self.manga
 
     def start(self):
 
@@ -74,26 +73,28 @@ class App:
             window['-IMAGE-'].update(manga['image'])
 
         ld_dictionary = {}
+        thread = Thread(target = self.getManga)
+        thread.start()
 
         # Run the Event Loop
         while True:
-            event, values = window.read()
+            event, values = window.read(timeout=200) 
             if event == "Exit" or event == sg.WIN_CLOSED:
                 break
             # Buttons
             if event == '-MANGA-':
-                manga = self.getManga()
-                updateManga(manga)
+                thread = Thread(target = self.getManga)
+                thread.start()
             if event == '-LIKE-':
-                ld_dictionary[manga['title']] = 1
+                ld_dictionary[self.manga['title']] = 1
                 window['-LIKELIST-'].update([name for name, value in ld_dictionary.items() if value == 1])
-                manga = self.getManga()
-                updateManga(manga)
+                thread = Thread(target = self.getManga)
+                thread.start()
             if event == '-DISLIKE-':
-                ld_dictionary[manga['title']] = -1
+                ld_dictionary[self.manga['title']] = -1
                 window['-DISLIKELIST-'].update([name for name, value in ld_dictionary.items() if value == -1])
-                manga = self.getManga()
-                updateManga(manga)
+                thread = Thread(target = self.getManga)
+                thread.start()
             # Search
             if values['-SEARCH-'] != '':
                 search = values['-SEARCH-']
@@ -103,14 +104,16 @@ class App:
                 window['-LIST-'].update([])
             # Listbox
             if event == '-LIST-' and len(values['-LIST-']):
-                manga = self.getManga(values['-LIST-'][0])
-                updateManga(manga)
+                thread = Thread(target = self.getManga, args=(values['-LIST-'][0],))
+                thread.start()
             if event == '-LIKELIST-' and len(values['-LIKELIST-']):
-                manga = self.getManga(values['-LIKELIST-'][0])
-                updateManga(manga)
+                thread = Thread(target = self.getManga, args=(values['-LIKELIST-'][0],))
+                thread.start()
             if event == '-DISLIKELIST-' and len(values['-DISLIKELIST-']):
-                manga = self.getManga(values['-DISLIKELIST-'][0])
-                updateManga(manga)
+                thread = Thread(target = self.getManga, args=(values['-DISLIKELIST-'][0],))
+                thread.start()
+            if not thread.is_alive():
+                updateManga(self.manga)
         window.close()
 
 
