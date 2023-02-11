@@ -4,7 +4,7 @@ App that recommends manga based on mangas you liked and disliked
 
 ## How can you use it?
 
-Open the main folder and locate MangaRecommender.exe, then run it.
+Open the dist/main folder and locate MangaRecommender.exe, then run it.
 
 ### What I learned/improved from doing this project
 
