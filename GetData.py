@@ -1,5 +1,3 @@
-from Ray import Supervisor
-import ray
 import pandas as pd
 import numpy as np
 from SQL import SQL
@@ -19,16 +17,6 @@ class GData:
         self.df = pd.DataFrame()
         self.getRevisedMangaDataframe(compare)
         pass
-
-    def downloadMangaDataframe(self):
-        '''
-        Download alot of Mangas
-        '''
-        supervisor = Supervisor.remote()
-        manga_stats = ray.get(supervisor.getMangas.remote())
-
-        self.df = pd.DataFrame(manga_stats).T
-        return self.df
 
     def getRevisedMangaDataframe(self, compare, df = None):
         '''

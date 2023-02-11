@@ -1,5 +1,4 @@
 import PySimpleGUI as sg 
-from GetData import GData
 from threading import Thread
 import textwrap
 

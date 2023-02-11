@@ -4,3 +4,4 @@ Databases/
 *.pyc
 .vscode
 __pycache__
+build
