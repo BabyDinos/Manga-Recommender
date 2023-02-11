@@ -1,6 +1,7 @@
 import PySimpleGUI as sg 
 from GetData import GData
 from threading import Thread
+import textwrap
 
 class App:
 
@@ -14,9 +15,11 @@ class App:
         rating_buttons = [
             [
                 sg.Btn(size=(10, 5), enable_events=True, key="-DISLIKE-", button_color = 'white on red', button_text= 'Dislike'),
-                sg.Btn(size=(10, 5), enable_events=True, key="-NEUTRAL-", button_color = 'white on gray', button_text = 'Neutral'),
                 sg.Btn(size=(10, 5), enable_events=True, key="-MANGA-", button_color = 'white on black', button_text = 'New Manga'),
-                sg.Btn(size=(10, 5), enable_events=True, key="-LIKE-", button_color = 'white on blue', button_text = 'Like')
+                sg.Btn(size=(10, 5), enable_events=True, key="-NEUTRAL-", button_color = 'white on gray', button_text = 'Neutral'),
+                sg.Btn(size=(10, 5), enable_events=True, key="-GETRECOMMENDATION-", button_color = 'white on black', button_text= 'Recommend'),
+                sg.Btn(size=(10, 5), enable_events=True, key="-LIKE-", button_color = 'white on blue', button_text = 'Like'),
+                
             ]
         ]
 
@@ -30,25 +33,27 @@ class App:
         ]
 
         manga_show = [
-            [sg.Text(size=(40,1), key='-OUTPUT-', justification = 'center', font = ("Arial", 20))],
+            [sg.Text(size=(40,1), key='-MANGATITLE-', justification = 'center', font = ("Arial", 15))],
             [sg.Image(size = (300,300), key = '-IMAGE-')],
+            [sg.Text(size=(40,1), key='-GENRE-', justification = 'center', font = ("Arial", 10))],
+            [sg.Text(size=(40,1), key='-THEME-', justification = 'center', font = ("Arial", 10))],
+            [sg.Text(size=(40,None), key='-SYNOPSIS-', justification = 'center', font = ("Arial", 10))],
             [sg.Input(size = (40, 1), key='-SEARCH-', enable_events= True)],
             [sg.Listbox([], size=(40, 4), enable_events=True, key='-LIST-', select_mode= 'single')],
         ]
 
         recommendation = [
             [sg.Text(size = (30,1), text = 'Recommendation List', key = '-REOMMENDATION-')],
-            [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')],
-            [sg.Btn(size=(10, 5), enable_events=True, key="-GETRECOMMENDATION-", button_color = 'white on black', button_text= 'Get Recommendation')]
+            [sg.Listbox([], size=(30, 4), enable_events=True, key='-RECOMMENDATIONLIST-', select_mode= 'single')]
         ]
 
         # ----- Full layout -----
         self.layout = [
-            [sg.Column(ld_list, vertical_alignment = 'top'),
+            [sg.Column(ld_list, vertical_alignment = 'top', justification= 'center'),
             sg.VerticalSeparator(),
             sg.Column(manga_show, justification = 'center', element_justification= 'center'),
             sg.VerticalSeparator(),
-            sg.Column(recommendation, vertical_alignment = 'top')
+            sg.Column(recommendation, vertical_alignment = 'top', justification= 'center')
             ],
             [
             [sg.HorizontalSeparator()],
@@ -62,19 +67,35 @@ class App:
         else:
             mal_id = self.gdata.getRandomMalID()
         manga = self.gdata.getManga(mal_id) 
+        if manga.themes:
+            theme = "Themes: " + ', '.join(manga.themes)
+        else:
+            theme = 'Themes: '
+        if manga.genres:
+            genre = "Genres: " + ', '.join(manga.genres) 
+        else:
+            genre = 'Genres: '
+        if manga.synopsis:
+            synopsis = textwrap.wrap(("Synopsis: " + manga.synopsis), 40)
+        else:
+            synopsis = 'Synopsis: '
         title = manga.title
         image = self.gdata.getImage(manga)
-        self.manga = {'title': title, 'image':image}
+        self.manga = {'title': title, 'image':image, 'synopsis':synopsis, 'genre':genre, 'theme':theme}
         return self.manga
 
     def start(self):
 
         names = list(self.manga_info.index)
-        window = sg.Window("Image Viewer", self.layout, element_justification='c')
-
+        window = sg.Window("Manga Recommender", self.layout, element_justification='c', resizable= True, finalize= True)
+        
         def updateManga(manga):
-            window['-OUTPUT-'].update(manga['title'])
+            window['-MANGATITLE-'].update(manga['title'])
+            window['-GENRE-'].update(manga['genre'])
+            window['-THEME-'].update(manga['theme'])
+            window['-SYNOPSIS-'].update(manga['synopsis'])
             window['-IMAGE-'].update(manga['image'])
+
 
         self.ld_dictionary = {}
         thread = Thread(target = self.getManga)
@@ -113,6 +134,8 @@ class App:
                     thread = Thread(target = self.user.updateRecommendationRanks, args = ([self.manga['title']], False, True))
                     thread.start()
                 self.ld_dictionary[self.manga['title']] = -1
+            if event == '-GETRECOMMENDATION-':
+                window['-RECOMMENDATIONLIST-'].update(recommendation)
             # Search
             if values['-SEARCH-'] != '':
                 search = values['-SEARCH-'].lower()
@@ -133,8 +156,10 @@ class App:
             if event == '-NEUTRALLIST-' and len(values['-NEUTRALLIST-']):
                 thread = Thread(target = self.getManga, args=(values['-NEUTRALLIST-'][0],))
                 thread.start()
-            if event == '-GETRECOMMENDATION-':
-                window['-RECOMMENDATIONLIST-'].update(recommendation)
+            if event == '-RECOMMENDATIONLIST-' and len(values['-RECOMMENDATIONLIST-']):
+                thread = Thread(target = self.getManga, args=(values['-RECOMMENDATIONLIST-'][0],))
+                thread.start()
+            # After Thread
             if not thread.is_alive():
                 updateManga(self.manga)
                 recommendation = list(self.user.getRecommendation().index)
