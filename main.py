@@ -12,17 +12,20 @@ from App import App
 # GUI | Character synopsis and relation
 
 
-gdata = GData()
+def main():
+        
+    gdata = GData('themes')
 
-df = gdata.getRevisedMangaDataframe('themes')
+    mdata = MData(gdata)
 
-mdata = MData(gdata)
+    user = User('User', mdata)
 
-user = User('BabyDino', mdata)
+    app = App(user)
 
-app = App(user)
+    app.setup()
 
-app.setup()
+    app.start()
 
-app.start()
+if __name__ == '__main__':
+    main()
 

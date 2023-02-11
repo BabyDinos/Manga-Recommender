@@ -15,8 +15,9 @@ import io
 
 class GData:
 
-    def __init__(self):
+    def __init__(self, compare):
         self.df = pd.DataFrame()
+        self.getRevisedMangaDataframe(compare)
         pass
 
     def downloadMangaDataframe(self):
@@ -41,6 +42,7 @@ class GData:
         df = df[df[compare].notna()]
         df.index = df['title']
         df['score'] = df['score'].astype(np.float32)
+        df = df[df['genres'].str.contains("Ecchi|Erotica|Hentai")==False]
         self.df = df
         return self.df
 

@@ -2,3 +2,5 @@ Databases/
 *.db
 *.pkl
 *.pyc
+.vscode
+__pycache__
